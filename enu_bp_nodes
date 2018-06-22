@@ -1,0 +1,6 @@
+# ENU firewall distribution list
+# Please write using the following format without spaces and try to keep your updates up to date.
+# This will influence the firewall rules.
+# Dragos Vlaicu | BP: dragosvlaicu | 22.06.2018
+#IP address|BP username
+35.207.21.45|dragosvlaicu
