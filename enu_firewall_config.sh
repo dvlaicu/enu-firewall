@@ -21,7 +21,7 @@ AWK='/usr/bin/awk'
 HOST='/usr/bin/host'
 ECHO='/bin/echo'
 DATE='/bin/date'
-ports='9000 8000'
+ports='22 9000 8000'
 SSH_PORT='22'
 SSH_ALLOW='0.0.0.0/0'
 IPT_LIST="$(${IPT} --line-numbers -nL INPUT)"
@@ -70,17 +70,18 @@ function valid_ip()
 # !! WARNING !! The following lines will wipe every iptables rules that you might have.
 # IF you use docker or any software that uses iptables comment them and make your own cleanup
 # Accept traffic from loopback interface
-${IPT} -A INPUT -i lo -m comment --comment "Loopback Inteface" -j ACCEPT
-${IPT} -A OUTPUT -o lo  -m comment --comment "Loopback Inteface" -j ACCEPT
-# Allow initiated traffic to pass thru
-${IPT} -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+LOStatus=$(${ECHO} "${IPT_LIST}" | ${AWK} '/Loopback Inteface/ {print $5}')
+if [[ -z ${LOStatus} ]]; then
+    ${IPT} -A INPUT -i lo -m comment --comment "Loopback Inteface" -j ACCEPT
+    ${IPT} -A OUTPUT -o lo  -m comment --comment "Loopback Inteface" -j ACCEPT
+    # Allow initiated traffic to pass thru
+    ${IPT} -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
 
-
-
-# Add the allow rule for ssh port from everyone (this can pe tweaked later to accept access only from particular IPs)
-${IPT} -A INPUT -s ${SSH_ALLOW} -p tcp --dport ${SSH_PORT} -m comment --comment "SSH Allow Rule from [${SSH_ALLOW}]" -j ACCEPT
-# Drop everything besides the ssh and p2p traffic that will be addded later on.
-${IPT} -A INPUT -s 0.0.0.0/0 -m comment --comment "Drop any traffic outside the rules" -j DROP
+    # Add the allow rule for ssh port from everyone (this can pe tweaked later to accept access only from particular IPs)
+    #${IPT} -A INPUT -s ${SSH_ALLOW} -p tcp --dport ${SSH_PORT} -m comment --comment "SSH Allow Rule from [${SSH_ALLOW}]" -j ACCEPT
+    # Drop everything besides the ssh and p2p traffic that will be addded later on.
+    ${IPT} -A INPUT -s 0.0.0.0/0 -m comment --comment "Drop any traffic outside the rules" -j DROP
+fi
 
 for PORT in ${ports}; do
     for BP in $(${GREP} -Ev "^$|^#" ${LIST} | ${AWK} -F "|" '{print $2}'); do
