@@ -11,4 +11,7 @@ creates rules for each entry or updates them accordingly.
 The list should have the following format (delimiter is | ):
 BP_IP|BP_NAME
 
-
+Changelog:
+- Implemented IPv4 / Hostname verification
+- Multiple ports are now parsed and rules are added accordingly. Every host will have an ACCEPT
+rule for each port.
