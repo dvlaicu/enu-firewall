@@ -67,14 +67,8 @@ function valid_ip()
     echo "$IP_BP"
 }
 
-# Clean everything
 # !! WARNING !! The following lines will wipe every iptables rules that you might have.
 # IF you use docker or any software that uses iptables comment them and make your own cleanup
-${IPT} -F
-${IPT} -t nat --flush
-# Delete all chains that are not in default filter and nat table
-${IPT} --delete-chain
-${IPT} -t nat --delete-chain
 # Accept traffic from loopback interface
 ${IPT} -A INPUT -i lo -m comment --comment "Loopback Inteface" -j ACCEPT
 ${IPT} -A OUTPUT -o lo  -m comment --comment "Loopback Inteface" -j ACCEPT
