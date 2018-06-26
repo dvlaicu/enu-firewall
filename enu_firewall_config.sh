@@ -16,6 +16,7 @@ fi
 
 # variables built with absolute path. Cron won't complain about not finding any in its path.
 IPT='/sbin/iptables'
+HEAD='/usr/bin/head'
 GREP='/bin/grep'
 AWK='/usr/bin/awk'
 HOST='/usr/bin/host'
@@ -86,19 +87,21 @@ fi
 for PORT in ${ports}; do
     for BP in $(${GREP} -Ev "^$|^#" ${LIST} | ${AWK} -F "|" '{print $2}'); do
         # Grab the IP for the BP from the iptables rules
-        IP_IPTABLES="$(${ECHO} "${IPT_LIST}" | ${AWK} '/'${PORT}_${BP}'/ {print $5}')"
+        IP_IPTABLES="$(${ECHO} "${IPT_LIST}" | ${AWK} '$10 == "'${PORT}_${BP}'" {print $5}' | ${HEAD} -1)"
         IP_GIT="$(${AWK} -F "|" '$2 == "'${BP}'" {print $1}' ${LIST})"
         # check if we're dealing with a hostname or IPv4 address
         IP_GIT=$(valid_ip "${IP_GIT}")
         
         if [[ -z ${IP_IPTABLES} ]]; then
             ${IPT} -I INPUT 1 -s ${IP_GIT} -p tcp --dport ${PORT} -m comment --comment "${PORT}_${BP}" -j ACCEPT
-            log_all "The rule for [${BP} -> ${IP_GIT}] was added successfully."
+            log_all "The rule for [${BP}] with [${IP_GIT}]  on port [${PORT}] was added successfully."
         else
             if [[ "${IP_IPTABLES}" != "${IP_GIT}" ]]; then
-                No_IPTABLES="$(${ECHO} "${IPT_LIST}" | ${AWK} '/'${BP}'/ {print $1}')"
-                ${IPT} -R INPUT ${No_IPTABLES} -s ${IP_GIT} -p tcp --dport ${PORT} -m comment --comment "${PORT}_${BP}" -j ACCEPT
-                log_all "The rule for [${BP} -> ${IP_GIT}] updated successfully."
+                No_IPTABLES="$(${ECHO} "${IPT_LIST}" | ${AWK} '$10 == "'${PORT}_${BP}'" {print $1}')"
+                for row in ${No_IPTABLES}; do
+                    ${IPT} -R INPUT ${row} -s ${IP_GIT} -p tcp --dport ${PORT} -m comment --comment "${PORT}_${BP}" -j ACCEPT
+                    log_all "The rule for [${BP}] with [${IP_GIT}]  on port [${PORT}] updated successfully."
+                done
             fi
         fi
     done
